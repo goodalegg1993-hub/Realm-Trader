@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realm Trader: Merchant of Oakhaven</title>
+  <style>
+    :root {
+      --bg-main: #0b0e14;
+      --bg-panel: #131924;
+      --bg-card: #1c2436;
+      --border-color: #2e3b55;
+      --border-highlight: #d4af37;
+      --gold-color: #f1c40f;
+      --gold-dark: #b78a02;
+      --hp-color: #e74c3c;
+      --hp-bg: #4a1510;
+      --text-main: #e2e8f0;
+      --text-muted: #8e9cb2;
+      --accent-blue: #3498db;
+      --accent-green: #2ecc71;
+      --accent-purple: #9b59b6;
+      --font-serif: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Modal Backdrop */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 7, 12, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: var(--bg-panel);
+      border: 2px solid var(--border-highlight);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 540px;
+      width: 92%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.2);
+    }
+
+    /* Header Bar */
+    header {
+      background: var(--bg-panel);
+      border-bottom: 2px solid var(--border-color);
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-left, .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .game-logo {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--gold-color);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .api-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .api-input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 0.8rem;
+      width: 140px;
+      outline: none;
+    }
+
+    .status-pill {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #7f8c8d;
+      transition: background 0.3s;
+    }
+    .status-pill.active { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .hp-bar-container {
+      width: 110px;
+      height: 14px;
+      background: var(--hp-bg);
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid var(--hp-color);
+      position: relative;
+    }
+
+    .hp-bar-fill {
+      height: 100%;
+      background: var(--hp-color);
+      transition: width 0.3s ease;
+      width: 100%;
+    }
+
+    .hp-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.65rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      padding: 16px;
+      gap: 16px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1100px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Tab Controls */
+    .tab-bar {
+      display: flex;
+      background: #0f141d;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-right: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tab-btn.active {
+      color: var(--gold-color);
+      background: var(--bg-panel);
+      border-bottom: 2px solid var(--gold-color);
+    }
+
+    .tab-content {
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+      max-height: calc(100vh - 150px);
+    }
+
+    /* Tables & Responsive Wrapper */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-container {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    .table-container th, .table-container td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .table-container th {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .table-container tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .item-tag {
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .tier-1 { color: #a0aec0; background: #2d3748; }
+    .tier-2 { color: #63b3ed; background: #2b4365; }
+    .tier-3 { color: #d6bcfa; background: #44337a; }
+
+    /* Quantity Control Group */
+    .action-cell-flex {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: nowrap;
+    }
+
+    .qty-control {
+      display: inline-flex;
+      align-items: center;
+      background: #0f141d;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      height: 27px;
+      box-sizing: border-box;
+    }
+
+    .qty-btn {
+      background: var(--bg-card);
+      border: none;
+      color: var(--text-main);
+      width: 22px;
+      height: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .qty-btn:hover {
+      background: #2c384e;
+      color: var(--gold-color);
+    }
+
+    .qty-btn:active {
+      background: #3a4b68;
+    }
+
+    .qty-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .qty-input {
+      width: 38px;
+      height: 25px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .qty-input::-webkit-outer-spin-button,
+    .qty-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 5px 9px;
+      border-radius: 4px;
+      font-size: 0.77rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-buy {
+      background: #1b4d3e;
+      color: #72f2d9;
+      border-color: #27ae60;
+    }
+    .btn-buy:hover { background: #236653; }
+
+    .btn-sell {
+      background: #5c3216;
+      color: #f39c12;
+      border-color: #d35400;
+    }
+    .btn-sell:hover { background: #733f1c; }
+
+    .btn-action {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border-color);
+      padding: 8px 14px;
+    }
+    .btn-action:hover {
+      border-color: var(--border-highlight);
+      color: var(--gold-color);
+    }
+
+    .btn-primary {
+      background: var(--gold-dark);
+      color: #000;
+      font-weight: bold;
+      border-color: var(--gold-color);
+    }
+    .btn-primary:hover { background: var(--gold-color); }
+
+    .btn-danger {
+      background: #78281f;
+      color: #f5b7b1;
+      border-color: #c0392b;
+    }
+    .btn-danger:hover { background: #922b21; }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Right Panel - Narrative Feed */
+    .narrative-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .location-header {
+      padding: 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .location-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--gold-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .location-ring {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-family: var(--font-sans);
+    }
+    .ring-0 { background: #2e4053; color: #d5d8dc; }
+    .ring-1 { background: #196f3d; color: #a9dfbf; }
+    .ring-2 { background: #b9770e; color: #f9e79f; }
+    .ring-3 { background: #78281f; color: #f5b7b1; }
+
+    .gemini-story {
+      margin-top: 10px;
+      font-style: italic;
+      color: #ccd6e0;
+      line-height: 1.45;
+      font-size: 0.9rem;
+      border-left: 3px solid var(--border-highlight);
+      padding-left: 10px;
+      min-height: 40px;
+    }
+
+    .feed-scroll {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 480px;
+    }
+
+    .log-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      background: var(--bg-card);
+      border-left: 3px solid var(--border-color);
+      animation: fadeIn 0.3s ease;
+    }
+    .log-trade { border-left-color: var(--accent-green); }
+    .log-travel { border-left-color: var(--accent-blue); }
+    .log-combat { border-left-color: var(--hp-color); }
+    .log-quest { border-left-color: var(--accent-purple); }
+    .log-gold { color: var(--gold-color); font-weight: 600; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Map Grid */
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .town-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .town-card:hover {
+      border-color: var(--border-highlight);
+      transform: translateY(-2px);
+    }
+
+    .town-card.current {
+      border-color: var(--gold-color);
+      box-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
+    }
+
+    /* Combat Overlay */
+    #combat-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(10, 4, 4, 0.9);
+      backdrop-filter: blur(5px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .combat-card {
+      background: var(--bg-panel);
+      border: 2px solid var(--hp-color);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 580px;
+      padding: 24px;
+      box-shadow: 0 0 30px rgba(231, 76, 60, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .combat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .combat-dialogue {
+      font-style: italic;
+      color: #ff9999;
+      background: rgba(231, 76, 60, 0.08);
+      border: 1px dashed var(--hp-color);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.95rem;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+
+    .combat-status {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      background: var(--bg-card);
+      padding: 14px;
+      border-radius: 6px;
+    }
+
+    .combat-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Upgrades grid */
+    .upgrade-section {
+      margin-bottom: 20px;
+    }
+    .upgrade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .upgrade-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .upgrade-card.owned {
+      border-color: var(--accent-green);
+      opacity: 0.8;
+    }
+
+    /* Warehouse specific */
+    .warehouse-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 4px;
+      background: #2b3345;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CHARACTER CREATION MODAL -->
+  <div id="char-creation-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h2 style="font-family: var(--font-serif); color: var(--gold-color); margin-bottom: 8px;">Create Your Merchant</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">Begin your merchant journey in the grand city of Oakhaven.</p>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Merchant Name</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="init-char-name" value="Valerius" style="flex: 1; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 4px; outline: none;">
+            <button class="btn btn-action" onclick="randomizeName()">Randomize</button>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Gender</label>
+          <select id="init-char-gender" style="width: 100%; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 4px; outline: none;">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Game Mode</label>
+          <select id="init-char-mode" style="width: 100%; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 4px; outline: none;">
+            <option value="Normal">Normal Mode (Defeat resets cargo & 50% gold; awaken in tavern)</option>
+            <option value="Hardcore">Hardcore Mode (Permadeath resets to Day 1 and 50g)</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 10px; padding: 12px;" onclick="startGame()">Embark as Merchant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPEDITION STAGING MODAL -->
+  <div id="expedition-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h2 style="font-family: var(--font-serif); color: var(--gold-color); margin-bottom: 6px;">Expedition Staging</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+        Prepare travel provisions and contract caravan guards before departing.
+      </p>
+
+      <div id="expedition-modal-content">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- VICTORY MODAL -->
+  <div id="victory-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="border-color: var(--gold-color); text-align: center;">
+      <h1 id="victory-title" style="font-family: var(--font-serif); color: var(--gold-color); margin-bottom: 10px;">VICTORY ACHIEVED!</h1>
+      <p id="victory-desc" style="color: var(--text-main); line-height: 1.6; margin-bottom: 20px;"></p>
+      <div id="victory-stats" style="background: var(--bg-card); padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem; text-align: left;"></div>
+      <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="resetGameToBeginning()">Play Anew</button>
+    </div>
+  </div>
+
+  <!-- COMBAT MODAL -->
+  <div id="combat-overlay">
+    <div class="combat-card">
+      <div class="combat-header">
+        <div style="display:flex; align-items:center; gap: 8px; flex-wrap: wrap;">
+          <h3 style="color: var(--hp-color); font-family: var(--font-serif);">Ambushed on the High Road!</h3>
+          <span id="combat-guard-badge" class="badge">No Guards</span>
+        </div>
+        <span id="combat-enemy-tier" class="badge" style="background: #78281f; color: #ff9999;">Bandit Threat</span>
+      </div>
+
+      <div class="combat-dialogue" id="combat-dialogue-box">
+        "Your coin purse looks heavy, traveler! Hand it over or bleed!"
+      </div>
+
+      <div class="combat-status">
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">You (<span id="combat-player-hp-txt">100/100</span> HP)</div>
+          <div class="hp-bar-container" style="width: 100%; height: 12px;">
+            <div id="combat-player-hp-bar" class="hp-bar-fill"></div>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;" id="combat-player-gear">Weapon: Small Sword</div>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;"><span id="combat-enemy-name">Outlaw Raider</span> (<span id="combat-enemy-hp-txt">40/40</span> HP)</div>
+          <div class="hp-bar-container" style="width: 100%; height: 12px;">
+            <div id="combat-enemy-hp-bar" class="hp-bar-fill" style="background: #e67e22;"></div>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;" id="combat-enemy-power">Power: Moderate</div>
+        </div>
+      </div>
+
+      <div class="combat-actions">
+        <button class="btn btn-danger" onclick="combatAction('attack')">⚔️ Strike Weapon</button>
+        <button class="btn btn-action" onclick="combatAction('defend')">🛡️ Defensive Stance (+5 HP)</button>
+        <button class="btn btn-action" onclick="combatAction('bribe')">💰 Bribe (<span id="bribe-cost-txt">15g</span>)</button>
+        <button class="btn btn-action" onclick="combatAction('flee')">🏃 Flee Route (70%)</button>
+      </div>
+
+      <div id="combat-log" style="font-size: 0.82rem; color: #cbd5e0; max-height: 85px; overflow-y: auto; background: var(--bg-card); padding: 8px; border-radius: 4px;"></div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="game-logo">⚔️ <span>Realm Trader</span></div>
+      <div class="api-container" title="Enter Google Gemini API Key for dynamic narrative generation">
+        <span class="status-pill" id="gemini-status-pill"></span>
+        <input type="password" id="gemini-api-key" class="api-input" placeholder="Gemini API Key..." onchange="handleApiKeyChange(this.value)">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="stat-badge" title="Merchant Name & Mode">
+        <span id="bar-char-name">Merchant</span>
+        <span class="badge" id="bar-mode" style="background: #2b3a4a; color: #90cdf4;">Normal</span>
+      </div>
+
+      <div class="stat-badge" title="Calendar Day">
+        📅 Day <span id="bar-day" style="color: #63b3ed;">1</span>
+      </div>
+
+      <div class="stat-badge" title="Merchant Gold">
+        🪙 <span id="bar-gold" class="log-gold">150</span>g
+      </div>
+
+      <div class="stat-badge" title="Cart Capacity">
+        📦 <span id="bar-cargo-count">0</span>/<span id="bar-cargo-max">20</span>
+      </div>
+
+      <div class="stat-badge" title="Vitality">
+        <div class="hp-bar-container">
+          <div class="hp-bar-fill" id="bar-hp-fill"></div>
+          <span class="hp-text" id="bar-hp-txt">100/100</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN GAME AREA -->
+  <main>
+    <!-- LEFT PANEL: TABS & ACTION INTERFACES -->
+    <section class="panel">
+      <nav class="tab-bar">
+        <button class="tab-btn active" id="tab-btn-market" onclick="switchTab('market')">🛒 Town Market</button>
+        <button class="tab-btn" id="tab-btn-warehouse" onclick="switchTab('warehouse')">🏛️ Warehouse</button>
+        <button class="tab-btn" id="tab-btn-equipment" onclick="switchTab('equipment')">🔨 Upgrades & Factor</button>
+        <button class="tab-btn" id="tab-btn-travel" onclick="switchTab('travel')">🗺️ Map & Travel</button>
+      </nav>
+
+      <div class="tab-content" id="tab-content-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: NARRATIVE & EVENT LOG -->
+    <section class="panel narrative-container">
+      <div class="location-header">
+        <div class="location-title">
+          <span id="loc-name">Oakhaven Capital</span>
+          <span class="location-ring ring-0" id="loc-ring">Hub (Safe)</span>
+        </div>
+        <div class="gemini-story" id="loc-story">
+          The majestic spires of Oakhaven rise proud against the horizon, its bustling stone plazas alive with merchants, hawkers, and the distant clink of gold.
+        </div>
+      </div>
+
+      <div class="feed-scroll" id="game-feed">
+        <div class="log-item log-trade">
+          Welcome to Oakhaven! Your family has gifted you a handcart and 150 gold. Buy trade goods low, travel safely, deposit goods in your warehouse, and make your fortune!
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* =========================================================================
+       DATA STRUCTURES & WORLD DEFINITIONS
+       ========================================================================= */
+
+    const ITEMS = [
+      // Tier 1 - Common
+      { id: "grain", name: "Grain", tier: 1, basePrice: 12 },
+      { id: "salt", name: "Salt", tier: 1, basePrice: 20 },
+      { id: "wool", name: "Wool", tier: 1, basePrice: 28 },
+      { id: "timber", name: "Timber", tier: 1, basePrice: 38 },
+      { id: "cider", name: "Cider", tier: 1, basePrice: 50 },
+      // Tier 2 - Trade
+      { id: "iron", name: "Iron Ingots", tier: 2, basePrice: 85 },
+      { id: "linen", name: "Linen", tier: 2, basePrice: 120 },
+      { id: "wine", name: "Vintage Wine", tier: 2, basePrice: 175 },
+      { id: "pottery", name: "Glazed Pottery", tier: 2, basePrice: 240 },
+      { id: "spices", name: "Exotic Spices", tier: 2, basePrice: 330 },
+      // Tier 3 - Luxury
+      { id: "silk", name: "Imperial Silk", tier: 3, basePrice: 480 },
+      { id: "silverware", name: "Silverware", tier: 3, basePrice: 720 },
+      { id: "perfume", name: "Rare Perfume", tier: 3, basePrice: 990 },
+      { id: "mithril", name: "Mithril Ore", tier: 3, basePrice: 1450 },
+      { id: "dragon_scale", name: "Dragon Scale", tier: 3, basePrice: 2400 }
+    ];
+
+    const TOWNS = [
+      // Hub (Ring 0)
+      {
+        id: "oakhaven",
+        name: "Oakhaven",
+        ring: 0,
+        desc: "The towering seat of the Realm. A vibrant metropolis of towering stone and endless guilds.",
+        multipliers: { grain: 1.0, salt: 1.0, wool: 1.0, timber: 1.0, cider: 1.0, iron: 1.0, linen: 1.0, wine: 1.0, pottery: 1.0, spices: 1.0, silk: 1.0, silverware: 1.0, perfume: 1.0, mithril: 1.0, dragon_scale: 1.0 }
+      },
+      // Ring 1 - Safe Outlying (1 Day travel from Hub)
+      {
+        id: "riverbend",
+        name: "Riverbend",
+        ring: 1,
+        desc: "A lush riverport where grain barges dock and flour mills churn ceaselessly.",
+        multipliers: { grain: 0.6, cider: 0.7, timber: 0.8, iron: 1.25, spices: 1.3, silk: 1.3 }
+      },
+      {
+        id: "millstone",
+        name: "Millstone Crossing",
+        ring: 1,
+        desc: "Fertile plains blanketed in golden wheat fields and grazing merino sheep.",
+        multipliers: { grain: 0.65, wool: 0.65, salt: 1.2, wine: 1.25, silverware: 1.35 }
+      },
+      {
+        id: "pinecrest",
+        name: "Pinecrest",
+        ring: 1,
+        desc: "Nestled in dense evergreen woods where lumberjacks and cider brewers ply their craft.",
+        multipliers: { timber: 0.6, cider: 0.75, grain: 1.2, iron: 1.15, pottery: 1.25 }
+      },
+      {
+        id: "sunhollow",
+        name: "Sunhollow",
+        ring: 1,
+        desc: "A sun-drenched valley famous for sprawling hillside vineyards and fine red clay.",
+        multipliers: { wine: 0.7, pottery: 0.7, wool: 1.25, salt: 1.15, perfume: 1.3 }
+      },
+      // Ring 2 - Moderate Distance (2 Days travel from Hub)
+      {
+        id: "ironforge_bluff",
+        name: "Ironforge Bluff",
+        ring: 2,
+        desc: "Smoking chimney stacks and massive deep stone quarries ring this dwarven redoubt.",
+        multipliers: { iron: 0.65, silverware: 0.8, grain: 1.4, cider: 1.35, timber: 1.2, silk: 1.45 }
+      },
+      {
+        id: "dunmere",
+        name: "Dunmere",
+        ring: 2,
+        desc: "A misty lake citadel known for vast salt pans and woven marsh reed linens.",
+        multipliers: { salt: 0.65, linen: 0.7, iron: 1.3, wine: 1.3, mithril: 1.4 }
+      },
+      {
+        id: "bramblewood",
+        name: "Bramblewood",
+        ring: 2,
+        desc: "An ancient forest hamlet where reclusive botanists cultivate aromatic herbs.",
+        multipliers: { perfume: 0.75, spices: 0.75, timber: 0.8, salt: 1.3, silverware: 1.4 }
+      },
+      {
+        id: "redstone_keep",
+        name: "Redstone Keep",
+        ring: 2,
+        desc: "A fortified border bastion garrisoned by veteran legionnaires thirsty for wine.",
+        multipliers: { iron: 0.8, wine: 1.45, grain: 1.35, wool: 1.2, dragon_scale: 1.4 }
+      },
+      {
+        id: "mistfall",
+        name: "Mistfall Haven",
+        ring: 2,
+        desc: "A sheltered coastal inlet rich in trade ships, foreign spices, and dyed cloths.",
+        multipliers: { spices: 0.75, linen: 0.8, timber: 1.3, cider: 1.25, mithril: 1.35 }
+      },
+      // Ring 3 - Dangerous / Far Outlying (3 Days travel from Hub)
+      {
+        id: "shadowfen",
+        name: "Shadowfen",
+        ring: 3,
+        desc: "A dangerous, sunken swampland teeming with venomous reptiles and shadowy rogue black markets.",
+        multipliers: { dragon_scale: 0.7, spices: 0.8, grain: 1.7, salt: 1.6, silverware: 1.5 }
+      },
+      {
+        id: "frostpeak",
+        name: "Frostpeak Mine",
+        ring: 3,
+        desc: "A glaciated mountain fastness digging deep into vein-rich lodes of pure mithril.",
+        multipliers: { mithril: 0.6, silverware: 0.7, grain: 1.8, cider: 1.7, wine: 1.65, timber: 1.55 }
+      },
+      {
+        id: "dragons_tooth",
+        name: "Dragon's Tooth",
+        ring: 3,
+        desc: "A volcanic caldera village where daring hunters stalk ancient drakes amidst sulfur springs.",
+        multipliers: { dragon_scale: 0.55, silk: 1.6, linen: 1.6, perfume: 1.7, grain: 1.8 }
+      },
+      {
+        id: "sunken_reach",
+        name: "Sunken Reach",
+        ring: 3,
+        desc: "A secluded oceanic paradise harvesting raw silk and exotic pearls.",
+        multipliers: { silk: 0.6, perfume: 0.75, iron: 1.65, timber: 1.6, wool: 1.5 }
+      },
+      {
+        id: "obsidian_crag",
+        name: "Obsidian Crag",
+        ring: 3,
+        desc: "The edge of the known civilized world, shrouded in ash clouds and forgotten ruins.",
+        multipliers: { mithril: 0.7, dragon_scale: 0.75, silverware: 0.75, grain: 1.9, salt: 1.7, cider: 1.8 }
+      }
+    ];
+
+    const EQUIPMENT_DATABASE = {
+      weapons: [
+        { id: "w_small_sword", name: "Small Sword", tier: 0, cost: 0, atk: 12, desc: "A nimble iron blade for self defense." },
+        { id: "w_steel_sword", name: "Steel Broadsword", tier: 1, cost: 350, atk: 22, desc: "Tempered blade capable of cutting down brigands." },
+        { id: "w_masterwork", name: "Masterwork Blade", tier: 2, cost: 1200, atk: 38, desc: "Balanced to perfection with gilded quillons." },
+        { id: "w_runed_claymore", name: "Runed Claymore", tier: 3, cost: 3500, atk: 60, desc: "Engraved with ancient runes that pulse with power." }
+      ],
+      armors: [
+        { id: "a_padded_tunic", name: "Padded Tunic", tier: 0, cost: 0, def: 2, desc: "Stiff quilted cotton offering light protection." },
+        { id: "a_studded_leather", name: "Studded Leather", tier: 1, cost: 400, def: 6, desc: "Cured hide reinforced with steel rivets." },
+        { id: "a_knights_plate", name: "Knight's Plate", tier: 2, cost: 1800, def: 14, desc: "Full tailored steel plates fit for a lord commander." }
+      ],
+      carts: [
+        { id: "c_handcart", name: "Wooden Handcart", tier: 0, cost: 0, slots: 20, upkeepMult: 1.0, desc: "A two-wheeled wooden cart pulled by hand." },
+        { id: "c_sturdy_wagon", name: "Sturdy Wagon", tier: 1, cost: 650, slots: 60, upkeepMult: 1.4, desc: "Reinforced pine wagon drawn by two draft mules." },
+        { id: "c_heavy_caravan", name: "Heavy Caravan", tier: 2, cost: 2800, slots: 150, upkeepMult: 2.0, desc: "A four-wagon armored convoy drawn by sturdy oxen." }
+      ],
+      warehouses: [
+        { id: "wh_small_shed", name: "Small Shed", tier: 0, cost: 0, slots: 50, desc: "A modest storage shack by the Oakhaven gates." },
+        { id: "wh_sturdy_depot", name: "Sturdy Depot", tier: 1, cost: 1200, slots: 200, desc: "A brick-and-timber warehouse guarded by night watchmen." },
+        { id: "wh_royal_vault", name: "Royal Vault", tier: 2, cost: 4500, slots: 500, desc: "An underground fortress vault proof against fire and thieves." }
+      ]
+    };
+
+    /* =========================================================================
+       GAME STATE & ACCOUNTING STRUCTURE
+       ========================================================================= */
+
+    let gameState = {
+      name: "Valerius",
+      gender: "Male",
+      mode: "Normal",
+      day: 1,
+      gold: 150,
+      hp: 100,
+      maxHp: 100,
+      currentTownId: "oakhaven",
+      lastTavernTownId: "oakhaven",
+
+      weaponTier: 0,
+      armorTier: 0,
+      cartTier: 0,
+      warehouseTier: 0,
+      hasTradeFactor: false,
+
+      // Cart Inventory: itemId -> { qty: number, totalCost: number }
+      inventory: {},
+      // Warehouse in Oakhaven: itemId -> { qty: number, avgCost: number }
+      warehouse: {},
+      priceFluctuations: {},
+
+      // Active hired guards for current journey (0, 1, 2, or 3)
+      hiredGuards: 0,
+
+      heirQuestStage: 0,
+      heirMetCount: 0,
+
+      activeTab: "market",
+      activeCombat: null,
+      pendingArrivalTownId: null
+    };
+
+    let currentExpedition = null;
+
+    /* =========================================================================
+       INITIALIZATION & STORAGE
+       ========================================================================= */
+
+    window.onload = function() {
+      const savedKey = localStorage.getItem("realm_gemini_api_key");
+      if (savedKey) {
+        document.getElementById("gemini-api-key").value = savedKey;
+        updateApiStatusIndicator(true);
+      } else {
+        updateApiStatusIndicator(false);
+      }
+
+      ITEMS.forEach(it => {
+        gameState.inventory[it.id] = { qty: 0, totalCost: 0 };
+        gameState.warehouse[it.id] = { qty: 0, avgCost: 0 };
+      });
+
+      refreshDailyFluctuations();
+      updateTopBar();
+    };
+
+    function handleApiKeyChange(val) {
+      const clean = val.trim();
+      if (clean) {
+        localStorage.setItem("realm_gemini_api_key", clean);
+        updateApiStatusIndicator(true);
+        addLog("Gemini API key linked. Dynamic atmospheric narrative enabled!", "log-quest");
+      } else {
+        localStorage.removeItem("realm_gemini_api_key");
+        updateApiStatusIndicator(false);
+        addLog("Gemini API key cleared. Running in rich offline fallback mode.", "log-travel");
+      }
+    }
+
+    function updateApiStatusIndicator(connected) {
+      const pill = document.getElementById("gemini-status-pill");
+      if (connected) {
+        pill.classList.add("active");
+        pill.title = "Connected to Gemini 2.0 Flash API";
+      } else {
+        pill.classList.remove("active");
+        pill.title = "Offline Fallback Mode (Pre-written lore active)";
+      }
+    }
+
+    const RANDOM_NAMES = ["Cassian", "Leona", "Aldous", "Mirella", "Theron", "Isolde", "Garrick", "Serafina", "Bartholomew", "Elora"];
+
+    function randomizeName() {
+      const rnd = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+      document.getElementById("init-char-name").value = rnd;
+    }
+
+    function startGame() {
+      const nameInput = document.getElementById("init-char-name").value.trim();
+      gameState.name = nameInput || "Valerius";
+      gameState.gender = document.getElementById("init-char-gender").value;
+      gameState.mode = document.getElementById("init-char-mode").value;
+
+      document.getElementById("char-creation-modal").style.display = "none";
+      updateTopBar();
+      renderActiveTab();
+      triggerLocationArrival(gameState.currentTownId);
+    }
+
+    function resetGameToBeginning() {
+      gameState.day = 1;
+      gameState.gold = 150;
+      gameState.hp = 100;
+      gameState.maxHp = 100;
+      gameState.currentTownId = "oakhaven";
+      gameState.lastTavernTownId = "oakhaven";
+      gameState.weaponTier = 0;
+      gameState.armorTier = 0;
+      gameState.cartTier = 0;
+      gameState.warehouseTier = 0;
+      gameState.hasTradeFactor = false;
+      gameState.hiredGuards = 0;
+      gameState.heirQuestStage = 0;
+      gameState.heirMetCount = 0;
+      gameState.activeCombat = null;
+      gameState.pendingArrivalTownId = null;
+      currentExpedition = null;
+
+      ITEMS.forEach(it => {
+        gameState.inventory[it.id] = { qty: 0, totalCost: 0 };
+        gameState.warehouse[it.id] = { qty: 0, avgCost: 0 };
+      });
+
+      document.getElementById("victory-modal").style.display = "none";
+      refreshDailyFluctuations();
+      updateTopBar();
+      renderActiveTab();
+      triggerLocationArrival("oakhaven");
+      addLog("You begin your merchant journey afresh in Oakhaven.", "log-trade");
+    }
+
+    /* =========================================================================
+       CALCULATIONS & HELPERS
+       ========================================================================= */
+
+    function getCartCargoCount() {
+      let sum = 0;
+      for (const k in gameState.inventory) {
+        sum += (gameState.inventory[k] ? gameState.inventory[k].qty : 0);
+      }
+      return sum;
+    }
+
+    function getCartMaxCargo() {
+      return EQUIPMENT_DATABASE.carts[gameState.cartTier].slots;
+    }
+
+    function getWarehouseCargoCount() {
+      let sum = 0;
+      for (const k in gameState.warehouse) {
+        sum += (gameState.warehouse[k] ? gameState.warehouse[k].qty : 0);
+      }
+      return sum;
+    }
+
+    function getWarehouseMaxCargo() {
+      return EQUIPMENT_DATABASE.warehouses[gameState.warehouseTier].slots;
+    }
+
+    function refreshDailyFluctuations() {
+      ITEMS.forEach(it => {
+        const fl = 0.85 + (Math.random() * 0.30);
+        gameState.priceFluctuations[it.id] = fl;
+      });
+    }
+
+    function getItemPriceInTown(itemId, townId) {
+      const it = ITEMS.find(i => i.id === itemId);
+      const town = TOWNS.find(t => t.id === townId);
+      const mult = (town.multipliers && town.multipliers[itemId] !== undefined) ? town.multipliers[itemId] : 1.0;
+      const fl = gameState.priceFluctuations[itemId] || 1.0;
+      const price = Math.round(it.basePrice * mult * fl);
+      return Math.max(1, price);
+    }
+
+    function getPlayerAtk() {
+      return EQUIPMENT_DATABASE.weapons[gameState.weaponTier].atk;
+    }
+
+    function getPlayerDef() {
+      return EQUIPMENT_DATABASE.armors[gameState.armorTier].def;
+    }
+
+    function getGuardCombatStats() {
+      const g = gameState.hiredGuards || 0;
+      if (g === 1) {
+        return { atkBonus: 10, passiveDmg: 6, dmgReduction: 0 };
+      } else if (g === 2) {
+        return { atkBonus: 18, passiveDmg: 12, dmgReduction: 0.20 };
+      } else if (g === 3) {
+        return { atkBonus: 25, passiveDmg: 18, dmgReduction: 0.35 };
+      }
+      return { atkBonus: 0, passiveDmg: 0, dmgReduction: 0 };
+    }
+
+    /* =========================================================================
+       UI UPDATES & TABS
+       ========================================================================= */
+
+    function updateTopBar() {
+      document.getElementById("bar-char-name").textContent = gameState.name;
+      const modePill = document.getElementById("bar-mode");
+      modePill.textContent = gameState.mode;
+      if (gameState.mode === "Hardcore") {
+        modePill.style.background = "#5c1d18";
+        modePill.style.color = "#feb2b2";
+      } else {
+        modePill.style.background = "#2b3a4a";
+        modePill.style.color = "#90cdf4";
+      }
+
+      document.getElementById("bar-day").textContent = gameState.day;
+      document.getElementById("bar-gold").textContent = gameState.gold.toLocaleString();
+
+      const cargoCount = getCartCargoCount();
+      const cargoMax = getCartMaxCargo();
+      document.getElementById("bar-cargo-count").textContent = cargoCount;
+      document.getElementById("bar-cargo-max").textContent = cargoMax;
+
+      const hpPercent = Math.max(0, Math.min(100, Math.round((gameState.hp / gameState.maxHp) * 100)));
+      document.getElementById("bar-hp-fill").style.width = hpPercent + "%";
+      document.getElementById("bar-hp-txt").textContent = `${gameState.hp}/${gameState.maxHp}`;
+
+      const whBtn = document.getElementById("tab-btn-warehouse");
+      if (gameState.currentTownId === "oakhaven") {
+        whBtn.style.display = "flex";
+      } else {
+        whBtn.style.display = "none";
+        if (gameState.activeTab === "warehouse") {
+          switchTab("market");
+        }
+      }
+    }
+
+    function switchTab(tabId) {
+      gameState.activeTab = tabId;
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      const btn = document.getElementById(`tab-btn-${tabId}`);
+      if (btn) btn.classList.add("active");
+      renderActiveTab();
+    }
+
+    function renderActiveTab() {
+      const container = document.getElementById("tab-content-container");
+      if (gameState.activeTab === "market") {
+        renderMarketTab(container);
+      } else if (gameState.activeTab === "warehouse") {
+        renderWarehouseTab(container);
+      } else if (gameState.activeTab === "equipment") {
+        renderEquipmentTab(container);
+      } else if (gameState.activeTab === "travel") {
+        renderTravelTab(container);
+      }
+    }
+
+    function addLog(text, typeClass = "") {
+      const feed = document.getElementById("game-feed");
+      const item = document.createElement("div");
+      item.className = `log-item ${typeClass}`;
+      item.innerHTML = text;
+      feed.insertBefore(item, feed.firstChild);
+    }
+
+    /* =========================================================================
+       TAB 1: MARKET WITH COST BASIS TRACKING & QUANTITY CONTROLS
+       ========================================================================= */
+
+    function getMarketMaxBuy(itemId) {
+      const curTown = TOWNS.find(t => t.id === gameState.currentTownId);
+      const price = getItemPriceInTown(itemId, curTown.id);
+      const freeSlots = getCartMaxCargo() - getCartCargoCount();
+      const maxAffordable = Math.floor(gameState.gold / price);
+      return Math.max(0, Math.min(freeSlots, maxAffordable));
+    }
+
+    function getMarketMaxSell(itemId) {
+      return (gameState.inventory[itemId] ? gameState.inventory[itemId].qty : 0);
+    }
+
+    function renderMarketTab(container) {
+      const curTown = TOWNS.find(t => t.id === gameState.currentTownId);
+      const curCargo = getCartCargoCount();
+      const maxCargo = getCartMaxCargo();
+
+      let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 style="color: var(--gold-color); font-family: var(--font-serif);">${curTown.name} Marketplace</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Cart Capacity: ${curCargo}/${maxCargo} slots</span>
+          </div>
+          <div>
+            <button class="btn btn-action" onclick="restAtTavern()">🛌 Rest at Tavern (20g)</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table-container" style="min-width: 720px;">
+            <thead>
+              <tr>
+                <th>Good</th>
+                <th>Tier</th>
+                <th>Market Price</th>
+                <th>In Cart</th>
+                <th>Cart Avg Cost</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      ITEMS.forEach(it => {
+        const price = getItemPriceInTown(it.id, curTown.id);
+        const cartItem = gameState.inventory[it.id] || { qty: 0, totalCost: 0 };
+        const owned = cartItem.qty;
+        const avgCost = owned > 0 ? (cartItem.totalCost / owned).toFixed(1) + "g" : "—";
+        const maxBuy = getMarketMaxBuy(it.id);
+        const maxSell = getMarketMaxSell(it.id);
+
+        const canBuyInitial = maxBuy >= 1;
+        const canSellInitial = maxSell >= 1;
+
+        html += `
+          <tr>
+            <td><strong>${it.name}</strong></td>
+            <td><span class="item-tag tier-${it.tier}">Tier ${it.tier}</span></td>
+            <td><span class="log-gold">${price}g</span></td>
+            <td>${owned}</td>
+            <td><span style="color: ${owned > 0 ? '#63b3ed' : 'var(--text-muted)'}; font-weight: 600;">${avgCost}</span></td>
+            <td>
+              <div class="action-cell-flex">
+                <div class="qty-control">
+                  <button type="button" class="qty-btn" onclick="adjustMarketQty('${it.id}', -1)">−</button>
+                  <input type="number" id="market-qty-${it.id}" class="qty-input" value="1" min="1" oninput="validateMarketQty('${it.id}')">
+                  <button type="button" class="qty-btn" onclick="adjustMarketQty('${it.id}', 1)">+</button>
+                </div>
+                <button class="btn btn-buy" id="btn-buy-${it.id}" ${canBuyInitial ? "" : "disabled"} onclick="buyQtyItem('${it.id}')">Buy <span id="lbl-buy-${it.id}">1</span></button>
+                <button class="btn btn-buy" ${canBuyInitial ? "" : "disabled"} onclick="buyMaxItem('${it.id}')" title="Buy maximum affordable/capacity">Max</button>
+                <button class="btn btn-sell" id="btn-sell-${it.id}" ${canSellInitial ? "" : "disabled"} onclick="sellQtyItem('${it.id}')">Sell <span id="lbl-sell-${it.id}">1</span></button>
+                <button class="btn btn-sell" ${canSellInitial ? "" : "disabled"} onclick="sellAllItem('${it.id}')" title="Sell all in cart">All</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function adjustMarketQty(itemId, delta) {
+      const input = document.getElementById(`market-qty-${itemId}`);
+      if (!input) return;
+      let val = parseInt(input.value, 10) || 1;
+      val += delta;
+      if (val < 1) val = 1;
+
+      const maxBuy = getMarketMaxBuy(itemId);
+      const maxSell = getMarketMaxSell(itemId);
+      const upperLimit = Math.max(1, Math.max(maxBuy, maxSell));
+      if (val > upperLimit) val = upperLimit;
+
+      input.value = val;
+      updateMarketRowLabels(itemId, val);
+    }
+
+    function validateMarketQty(itemId) {
+      const input = document.getElementById(`market-qty-${itemId}`);
+      if (!input) return;
+      let val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+
+      const maxBuy = getMarketMaxBuy(itemId);
+      const maxSell = getMarketMaxSell(itemId);
+      const upperLimit = Math.max(1, Math.max(maxBuy, maxSell));
+      if (val > upperLimit) val = upperLimit;
+
+      input.value = val;
+      updateMarketRowLabels(itemId, val);
+    }
+
+    function updateMarketRowLabels(itemId, val) {
+      const lblBuy = document.getElementById(`lbl-buy-${itemId}`);
+      const lblSell = document.getElementById(`lbl-sell-${itemId}`);
+      if (lblBuy) lblBuy.textContent = val;
+      if (lblSell) lblSell.textContent = val;
+
+      const btnBuy = document.getElementById(`btn-buy-${itemId}`);
+      const btnSell = document.getElementById(`btn-sell-${itemId}`);
+      const maxBuy = getMarketMaxBuy(itemId);
+      const maxSell = getMarketMaxSell(itemId);
+
+      if (btnBuy) btnBuy.disabled = (maxBuy < 1 || val > maxBuy);
+      if (btnSell) btnSell.disabled = (maxSell < 1 || val > maxSell);
+    }
+
+    function buyQtyItem(itemId) {
+      const input = document.getElementById(`market-qty-${itemId}`);
+      let qty = input ? parseInt(input.value, 10) : 1;
+      if (isNaN(qty) || qty < 1) qty = 1;
+
+      const curTown = TOWNS.find(t => t.id === gameState.currentTownId);
+      const price = getItemPriceInTown(itemId, curTown.id);
+      const maxBuy = getMarketMaxBuy(itemId);
+
+      if (maxBuy <= 0) {
+        if (getCartCargoCount() >= getCartMaxCargo()) {
+          addLog("Your cart has no more room for cargo!", "log-trade");
+        } else {
+          addLog("You cannot afford any of this good!", "log-trade");
+        }
+        return;
+      }
+
+      if (qty > maxBuy) {
+        qty = maxBuy;
+        if (input) input.value = qty;
+      }
+
+      const it = ITEMS.find(i => i.id === itemId);
+      const totalCost = price * qty;
+      gameState.gold -= totalCost;
+
+      if (!gameState.inventory[itemId]) {
+        gameState.inventory[itemId] = { qty: 0, totalCost: 0 };
+      }
+      gameState.inventory[itemId].qty += qty;
+      gameState.inventory[itemId].totalCost += totalCost;
+
+      addLog(`Purchased ${qty}x ${it.name} for <span class="log-gold">${totalCost}g</span> (unit price: ${price}g).`, "log-trade");
+      updateTopBar();
+      renderMarketTab(document.getElementById("tab-content-container"));
+      checkVictoryConditions();
+    }
+
+    function buyMaxItem(itemId) {
+      const maxBuy = getMarketMaxBuy(itemId);
+      if (maxBuy > 0) {
+        const input = document.getElementById(`market-qty-${itemId}`);
+        if (input) input.value = maxBuy;
+        buyQtyItem(itemId);
+      } else {
+        addLog("Cannot purchase any more of this good.", "log-trade");
+      }
+    }
+
+    function sellQtyItem(itemId) {
+      const input = document.getElementById(`market-qty-${itemId}`);
+      let qty = input ? parseInt(input.value, 10) : 1;
+      if (isNaN(qty) || qty < 1) qty = 1;
+
+      const cartItem = gameState.inventory[itemId];
+      const owned = cartItem ? cartItem.qty : 0;
+      if (owned <= 0) {
+        addLog("You have none of this good in your cart to sell!", "log-trade");
+        return;
+      }
+
+      if (qty > owned) {
+        qty = owned;
+        if (input) input.value = qty;
+      }
+
+      const curTown = TOWNS.find(t => t.id === gameState.currentTownId);
+      const price = getItemPriceInTown(itemId, curTown.id);
+      const it = ITEMS.find(i => i.id === itemId);
+
+      const unitCost = cartItem.qty > 0 ? (cartItem.totalCost / cartItem.qty) : 0;
+      const costDeducted = unitCost * qty;
+      cartItem.qty -= qty;
+      cartItem.totalCost = Math.max(0, cartItem.totalCost - costDeducted);
+      if (cartItem.qty === 0) cartItem.totalCost = 0;
+
+      const totalSale = price * qty;
+      gameState.gold += totalSale;
+
+      const profitDiff = (price - unitCost) * qty;
+      const profitStr = unitCost > 0
+        ? ` (${profitDiff >= 0 ? '+' : ''}${Math.round(profitDiff)}g margin)`
+        : "";
+
+      addLog(`Sold ${qty}x ${it.name} for <span class="log-gold">${totalSale}g</span>${profitStr}.`, "log-trade");
+      updateTopBar();
+      renderMarketTab(document.getElementById("tab-content-container"));
+      checkVictoryConditions();
+    }
+
+    function sellAllItem(itemId) {
+      const cartItem = gameState.inventory[itemId];
+      const owned = cartItem ? cartItem.qty : 0;
+      if (owned > 0) {
+        const input = document.getElementById(`market-qty-${itemId}`);
+        if (input) input.value = owned;
+
+        const curTown = TOWNS.find(t => t.id === gameState.currentTownId);
+        const price = getItemPriceInTown(itemId, curTown.id);
+        const it = ITEMS.find(i => i.id === itemId);
+
+        const unitCost = cartItem.totalCost / owned;
+        const profitDiff = (price - unitCost) * owned;
+        const profitStr = unitCost > 0
+          ? ` (${profitDiff >= 0 ? '+' : ''}${Math.round(profitDiff)}g margin)`
+          : "";
+
+        cartItem.qty = 0;
+        cartItem.totalCost = 0;
+        const totalSale = price * owned;
+        gameState.gold += totalSale;
+
+        addLog(`Sold all (${owned}x) ${it.name} for <span class="log-gold">${totalSale}g</span>${profitStr}.`, "log-trade");
+        updateTopBar();
+        renderMarketTab(document.getElementById("tab-content-container"));
+        checkVictoryConditions();
+      }
+    }
+
+    function restAtTavern() {
+      if (gameState.gold < 20) {
+        addLog("You don't have 20 gold for a warm tavern room!", "log-combat");
+        return;
+      }
+      gameState.gold -= 20;
+      gameState.hp = gameState.maxHp;
+      gameState.lastTavernTownId = gameState.currentTownId;
+      addLog(`Rested at the local tavern for 20g. Vitality fully restored (${gameState.hp}/${gameState.maxHp} HP).`, "log-trade");
+      updateTopBar();
+      renderMarketTab(document.getElementById("tab-content-container"));
+    }
+
+    /* =========================================================================
+       TAB 2: OAKHAVEN WAREHOUSE WITH WEIGHTED-AVERAGE COST BASIS
+       ========================================================================= */
+
+    function getWarehouseMaxDeposit(itemId) {
+      const inCart = (gameState.inventory[itemId] ? gameState.inventory[itemId].qty : 0);
+      const freeWh = getWarehouseMaxCargo() - getWarehouseCargoCount();
+      return Math.max(0, Math.min(inCart, freeWh));
+    }
+
+    function getWarehouseMaxWithdraw(itemId) {
+      const inWh = (gameState.warehouse[itemId] ? gameState.warehouse[itemId].qty : 0);
+      const freeCart = getCartMaxCargo() - getCartCargoCount();
+      return Math.max(0, Math.min(inWh, freeCart));
+    }
+
+    function renderWarehouseTab(container) {
+      if (gameState.currentTownId !== "oakhaven") {
+        container.innerHTML = `<p style="color: var(--text-muted);">The Warehouse is only accessible when present in the capital city of Oakhaven.</p>`;
+        return;
+      }
+
+      const whCount = getWarehouseCargoCount();
+      const whMax = getWarehouseMaxCargo();
+      const whTierData = EQUIPMENT_DATABASE.warehouses[gameState.warehouseTier];
+
+      let html = `
+        <div class="warehouse-header">
+          <div>
+            <h3 style="color: var(--gold-color); font-family: var(--font-serif);">${whTierData.name} Storage</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Capacity: ${whCount} / ${whMax} slots</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-align: right;">
+            Deposit goods bought abroad at true purchase cost to sell when capital prices peak.
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table-container" style="min-width: 780px;">
+            <thead>
+              <tr>
+                <th>Good</th>
+                <th>Cart Qty</th>
+                <th>Cart Avg Cost</th>
+                <th>Stored Qty</th>
+                <th>Wh Avg Cost</th>
+                <th>Oakhaven Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      ITEMS.forEach(it => {
+        const cartItem = gameState.inventory[it.id] || { qty: 0, totalCost: 0 };
+        const inCart = cartItem.qty;
+        const cartAvg = inCart > 0 ? (cartItem.totalCost / inCart).toFixed(1) + "g" : "—";
+
+        const whItem = gameState.warehouse[it.id] || { qty: 0, avgCost: 0 };
+        const stored = whItem.qty;
+        const whAvg = stored > 0 ? Number(whItem.avgCost).toFixed(1) + "g" : "—";
+        const currentOakPrice = getItemPriceInTown(it.id, "oakhaven");
+
+        const maxDep = getWarehouseMaxDeposit(it.id);
+        const maxWith = getWarehouseMaxWithdraw(it.id);
+
+        const canDepositInitial = maxDep >= 1;
+        const canWithdrawInitial = maxWith >= 1;
+
+        html += `
+          <tr>
+            <td><strong>${it.name}</strong></td>
+            <td>${inCart}</td>
+            <td><span style="color: ${inCart > 0 ? '#63b3ed' : 'var(--text-muted)'}; font-weight: 600;">${cartAvg}</span></td>
+            <td><strong>${stored}</strong></td>
+            <td><span style="color: ${stored > 0 ? '#d6bcfa' : 'var(--text-muted)'}; font-weight: 600;">${whAvg}</span></td>
+            <td><span class="log-gold">${currentOakPrice}g</span></td>
+            <td>
+              <div class="action-cell-flex">
+                <div class="qty-control">
+                  <button type="button" class="qty-btn" onclick="adjustWarehouseQty('${it.id}', -1)">−</button>
+                  <input type="number" id="wh-qty-${it.id}" class="qty-input" value="1" min="1" oninput="validateWarehouseQty('${it.id}')">
+                  <button type="button" class="qty-btn" onclick="adjustWarehouseQty('${it.id}', 1)">+</button>
+                </div>
+                <button class="btn btn-buy" id="btn-dep-${it.id}" ${canDepositInitial ? "" : "disabled"} onclick="depositQtyToWarehouse('${it.id}')">Deposit <span id="lbl-dep-${it.id}">1</span></button>
+                <button class="btn btn-buy" ${canDepositInitial ? "" : "disabled"} onclick="depositAllToWarehouse('${it.id}')" title="Deposit all in cart">Deposit All</button>
+                <button class="btn btn-sell" id="btn-with-${it.id}" ${canWithdrawInitial ? "" : "disabled"} onclick="withdrawQtyFromWarehouse('${it.id}')">Withdraw <span id="lbl-with-${it.id}">1</span></button>
+                <button class="btn btn-sell" ${canWithdrawInitial ? "" : "disabled"} onclick="withdrawAllFromWarehouse('${it.id}')" title="Withdraw all from warehouse">Withdraw All</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function adjustWarehouseQty(itemId, delta) {
+      const input = document.getElementById(`wh-qty-${itemId}`);
+      if (!input) return;
+      let val = parseInt(input.value, 10) || 1;
+      val += delta;
+      if (val < 1) val = 1;
+
+      const maxDep = getWarehouseMaxDeposit(itemId);
+      const maxWith = getWarehouseMaxWithdraw(itemId);
+      const upperLimit = Math.max(1, Math.max(maxDep, maxWith));
+      if (val > upperLimit) val = upperLimit;
+
+      input.value = val;
+      updateWarehouseRowLabels(itemId, val);
+    }
+
+    function validateWarehouseQty(itemId) {
+      const input = document.getElementById(`wh-qty-${itemId}`);
+      if (!input) return;
+      let val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+
+      const maxDep = getWarehouseMaxDeposit(itemId);
+      const maxWith = getWarehouseMaxWithdraw(itemId);
+      const upperLimit = Math.max(1, Math.max(maxDep, maxWith));
+      if (val > upperLimit) val = upperLimit;
+
+      input.value = val;
+      updateWarehouseRowLabels(itemId, val);
+    }
+
+    function updateWarehouseRowLabels(itemId, val) {
+      const lblDep = document.getElementById(`lbl-dep-${itemId}`);
+      const lblWith = document.getElementById(`lbl-with-${itemId}`);
+      if (lblDep) lblDep.textContent = val;
+      if (lblWith) lblWith.textContent = val;
+
+      const btnDep = document.getElementById(`btn-dep-${itemId}`);
+      const btnWith = document.getElementById(`btn-with-${itemId}`);
+      const maxDep = getWarehouseMaxDeposit(itemId);
+      const maxWith = getWarehouseMaxWithdraw(itemId);
+
+      if (btnDep) btnDep.disabled = (maxDep < 1 || val > maxDep);
+      if (btnWith) btnWith.disabled = (maxWith < 1 || val > maxWith);
+    }
+
+    function depositToWarehouse(itemId, qty) {
+      const cartItem = gameState.inventory[itemId];
+      const whItem = gameState.warehouse[itemId];
+      if (!cartItem || cartItem.qty < qty || qty <= 0) return;
+
+      const unitCost = cartItem.qty > 0 ? (cartItem.totalCost / cartItem.qty) : 0;
+      const transferredCost = qty * unitCost;
+      const newWarehouseAvg = ((whItem.qty * whItem.avgCost) + transferredCost) / (whItem.qty + qty);
+
+      whItem.qty += qty;
+      whItem.avgCost = newWarehouseAvg;
+
+      cartItem.qty -= qty;
+      cartItem.totalCost = Math.max(0, cartItem.totalCost - transferredCost);
+      if (cartItem.qty === 0) cartItem.totalCost = 0;
+    }
+
+    function withdrawFromWarehouse(itemId, qty) {
+      const cartItem = gameState.inventory[itemId];
+      const whItem = gameState.warehouse[itemId];
+      if (!whItem || whItem.qty < qty || qty <= 0) return;
+
+      const transferredCost = qty * whItem.avgCost;
+
+      whItem.qty -= qty;
+      if (whItem.qty === 0) whItem.avgCost = 0;
+
+      cartItem.qty += qty;
+      cartItem.totalCost += transferredCost;
+    }
+
+    function depositQtyToWarehouse(itemId) {
+      const input = document.getElementById(`wh-qty-${itemId}`);
+      let qty = input ? parseInt(input.value, 10) : 1;
+      if (isNaN(qty) || qty < 1) qty = 1;
+
+      const maxDep = getWarehouseMaxDeposit(itemId);
+      if (maxDep <= 0) {
+        if (getWarehouseCargoCount() >= getWarehouseMaxCargo()) {
+          addLog("Warehouse is completely full!", "log-trade");
+        } else {
+          addLog("You have none of this good in your cart to deposit!", "log-trade");
+        }
+        return;
+      }
+
+      if (qty > maxDep) {
+        qty = maxDep;
+        if (input) input.value = qty;
+      }
+
+      depositToWarehouse(itemId, qty);
+      const it = ITEMS.find(i => i.id === itemId);
+      addLog(`Deposited ${qty}x ${it.name} into Oakhaven Warehouse.`, "log-trade");
+      updateTopBar();
+      renderWarehouseTab(document.getElementById("tab-content-container"));
+    }
+
+    function depositAllToWarehouse(itemId) {
+      const maxDep = getWarehouseMaxDeposit(itemId);
+      if (maxDep > 0) {
+        depositToWarehouse(itemId, maxDep);
+        const it = ITEMS.find(i => i.id === itemId);
+        addLog(`Deposited all (${maxDep}x) ${it.name} into Oakhaven Warehouse.`, "log-trade");
+        updateTopBar();
+        renderWarehouseTab(document.getElementById("tab-content-container"));
+      } else {
+        if (getWarehouseCargoCount() >= getWarehouseMaxCargo()) {
+          addLog("Warehouse is completely full!", "log-trade");
+        } else {
+          addLog("No goods in cart to deposit.", "log-trade");
+        }
+      }
+    }
+
+    function withdrawQtyFromWarehouse(itemId) {
+      const input = document.getElementById(`wh-qty-${itemId}`);
+      let qty = input ? parseInt(input.value, 10) : 1;
+      if (isNaN(qty) || qty < 1) qty = 1;
+
+      const maxWith = getWarehouseMaxWithdraw(itemId);
+      if (maxWith <= 0) {
+        if (getCartCargoCount() >= getCartMaxCargo()) {
+          addLog("Your cart is completely full!", "log-trade");
+        } else {
+          addLog("You have none of this good in the warehouse to withdraw!", "log-trade");
+        }
+        return;
+      }
+
+      if (qty > maxWith) {
+        qty = maxWith;
+        if (input) input.value = qty;
+      }
+
+      withdrawFromWarehouse(itemId, qty);
+      const it = ITEMS.find(i => i.id === itemId);
+      addLog(`Withdrew ${qty}x ${it.name} from Oakhaven Warehouse into cart.`, "log-trade");
+      updateTopBar();
+      renderWarehouseTab(document.getElementById("tab-content-container"));
+    }
+
+    function withdrawAllFromWarehouse(itemId) {
+      const maxWith = getWarehouseMaxWithdraw(itemId);
+      if (maxWith > 0) {
+        withdrawFromWarehouse(itemId, maxWith);
+        const it = ITEMS.find(i => i.id === itemId);
+        addLog(`Withdrew all (${maxWith}x) ${it.name} from Oakhaven Warehouse.`, "log-trade");
+        updateTopBar();
+        renderWarehouseTab(document.getElementById("tab-content-container"));
+      } else {
+        if (getCartCargoCount() >= getCartMaxCargo()) {
+          addLog("Your cart is completely full!", "log-trade");
+        } else {
+          addLog("No items available in warehouse to withdraw.", "log-trade");
+        }
+      }
+    }
+
+    /* =========================================================================
+       TAB 3: EQUIPMENT & TRADE FACTOR AUTOMATION
+       ========================================================================= */
+
+    function renderEquipmentTab(container) {
+      let html = `
+        <div class="upgrade-section">
+          <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">⚔️ Weapons</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Increase strike damage in bandit encounters.</p>
+          <div class="upgrade-grid">
+      `;
+
+      EQUIPMENT_DATABASE.weapons.forEach((w, idx) => {
+        const isOwned = gameState.weaponTier >= idx;
+        const isNext = gameState.weaponTier + 1 === idx;
+        html += `
+          <div class="upgrade-card ${isOwned ? "owned" : ""}">
+            <div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>${w.name}</strong>
+                <span class="badge" style="color:#72f2d9;">+${w.atk} ATK</span>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">${w.desc}</p>
+            </div>
+            <div>
+              ${isOwned ? `<span style="font-size:0.8rem; color:var(--accent-green);">✓ Equipped</span>` : `
+                <button class="btn btn-buy" style="width:100%;" ${isNext && gameState.gold >= w.cost ? "" : "disabled"} onclick="buyEquipment('weapons', ${idx})">
+                  Buy for ${w.cost}g
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div><div class="upgrade-section">
+        <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">🛡️ Armor</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Reduces damage taken during attacks.</p>
+        <div class="upgrade-grid">
+      `;
+
+      EQUIPMENT_DATABASE.armors.forEach((a, idx) => {
+        const isOwned = gameState.armorTier >= idx;
+        const isNext = gameState.armorTier + 1 === idx;
+        html += `
+          <div class="upgrade-card ${isOwned ? "owned" : ""}">
+            <div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>${a.name}</strong>
+                <span class="badge" style="color:#63b3ed;">+${a.def} DEF</span>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">${a.desc}</p>
+            </div>
+            <div>
+              ${isOwned ? `<span style="font-size:0.8rem; color:var(--accent-green);">✓ Equipped</span>` : `
+                <button class="btn btn-buy" style="width:100%;" ${isNext && gameState.gold >= a.cost ? "" : "disabled"} onclick="buyEquipment('armors', ${idx})">
+                  Buy for ${a.cost}g
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div><div class="upgrade-section">
+        <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">📦 Caravan Carts</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Expands the cargo slots you can haul on expeditions.</p>
+        <div class="upgrade-grid">
+      `;
+
+      EQUIPMENT_DATABASE.carts.forEach((c, idx) => {
+        const isOwned = gameState.cartTier >= idx;
+        const isNext = gameState.cartTier + 1 === idx;
+        html += `
+          <div class="upgrade-card ${isOwned ? "owned" : ""}">
+            <div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>${c.name}</strong>
+                <span class="badge" style="color:var(--gold-color);">${c.slots} Cargo</span>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">${c.desc}</p>
+            </div>
+            <div>
+              ${isOwned ? `<span style="font-size:0.8rem; color:var(--accent-green);">✓ Active Cart</span>` : `
+                <button class="btn btn-buy" style="width:100%;" ${isNext && gameState.gold >= c.cost ? "" : "disabled"} onclick="buyEquipment('carts', ${idx})">
+                  Buy for ${c.cost}g
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div><div class="upgrade-section">
+        <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">🏛️ Oakhaven Warehouse Expansion</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Expand secure storage capacity in the capital.</p>
+        <div class="upgrade-grid">
+      `;
+
+      EQUIPMENT_DATABASE.warehouses.forEach((wh, idx) => {
+        const isOwned = gameState.warehouseTier >= idx;
+        const isNext = gameState.warehouseTier + 1 === idx;
+        html += `
+          <div class="upgrade-card ${isOwned ? "owned" : ""}">
+            <div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>${wh.name}</strong>
+                <span class="badge" style="color:#d6bcfa;">${wh.slots} Slots</span>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">${wh.desc}</p>
+            </div>
+            <div>
+              ${isOwned ? `<span style="font-size:0.8rem; color:var(--accent-green);">✓ Built</span>` : `
+                <button class="btn btn-buy" style="width:100%;" ${isNext && gameState.gold >= wh.cost ? "" : "disabled"} onclick="buyEquipment('warehouses', ${idx})">
+                  Build for ${wh.cost}g
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div><div class="upgrade-section">
+        <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">🤝 Trade Factor Automation</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Hire a trusted trade clerk in Oakhaven who runs automated short arbitrage routes whenever you travel.</p>
+        <div class="upgrade-grid">
+          <div class="upgrade-card ${gameState.hasTradeFactor ? "owned" : ""}">
+            <div>
+              <strong>Master Trade Factor</strong>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Automatically generates between 40g and 120g of net trade profit each day you are traveling the roads.</p>
+            </div>
+            <div>
+              ${gameState.hasTradeFactor ? `<span style="font-size:0.8rem; color:var(--accent-green);">✓ Hired and Active</span>` : `
+                <button class="btn btn-buy" style="width:100%;" ${gameState.gold >= 2500 ? "" : "disabled"} onclick="hireTradeFactor()">
+                  Hire for 2,500g
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="upgrade-section" style="border-top: 1px solid var(--border-color); padding-top: 15px;">
+        <h3 style="color: var(--gold-color); font-family: var(--font-serif); margin-bottom: 4px;">👑 Victory Endeavors</h3>
+        <div class="upgrade-grid">
+          <div class="upgrade-card">
+            <div>
+              <strong>The Royal Castle Deed</strong>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Purchase the grand coastal estate overlooking Oakhaven and secure your immortal noble legacy.</p>
+            </div>
+            <div>
+              <button class="btn btn-primary" style="width:100%;" ${gameState.gold >= 25000 ? "" : "disabled"} onclick="buyCastleVictory()">
+                Purchase Deed (25,000g)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function buyEquipment(type, idx) {
+      const item = EQUIPMENT_DATABASE[type][idx];
+      if (gameState.gold < item.cost) return;
+
+      gameState.gold -= item.cost;
+      if (type === "weapons") gameState.weaponTier = idx;
+      if (type === "armors") gameState.armorTier = idx;
+      if (type === "carts") gameState.cartTier = idx;
+      if (type === "warehouses") gameState.warehouseTier = idx;
+
+      addLog(`Upgraded to ${item.name} for ${item.cost}g!`, "log-quest");
+      updateTopBar();
+      renderEquipmentTab(document.getElementById("tab-content-container"));
+      checkVictoryConditions();
+    }
+
+    function hireTradeFactor() {
+      if (gameState.gold < 2500 || gameState.hasTradeFactor) return;
+      gameState.gold -= 2500;
+      gameState.hasTradeFactor = true;
+      addLog("Hired a Master Trade Factor! They will run automated routes from Oakhaven to generate passive gold as you travel.", "log-quest");
+      updateTopBar();
+      renderEquipmentTab(document.getElementById("tab-content-container"));
+      checkVictoryConditions();
+    }
+
+    /* =========================================================================
+       TAB 4: MAP & EXPEDITION STAGING SYSTEM
+       ========================================================================= */
+
+    function renderTravelTab(container) {
+      const currentTown = TOWNS.find(t => t.id === gameState.currentTownId);
+
+      let html = `
+        <div style="margin-bottom: 14px;">
+          <h3 style="color: var(--gold-color); font-family: var(--font-serif);">Select Travel Destination</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">
+            Travel provisions are normalized to <strong>2g per day</strong>. Paying provisions grants <strong>+10 HP road healing per day</strong>. Click a route to stage your expedition and contract guards!
+          </p>
+        </div>
+        <div class="map-grid">
+      `;
+
+      TOWNS.forEach(town => {
+        const isCurrent = town.id === gameState.currentTownId;
+        const distSteps = Math.max(1, Math.abs(town.ring - currentTown.ring) + (town.ring === 0 || currentTown.ring === 0 ? 0 : 1));
+        const provisionsCost = distSteps * 2;
+
+        let ringClass = "ring-1";
+        let ringLabel = "Ring 1 (Safe)";
+        if (town.ring === 0) { ringClass = "ring-0"; ringLabel = "Capital"; }
+        if (town.ring === 2) { ringClass = "ring-2"; ringLabel = "Ring 2 (Moderate)"; }
+        if (town.ring === 3) { ringClass = "ring-3"; ringLabel = "Ring 3 (Dangerous)"; }
+
+        html += `
+          <div class="town-card ${isCurrent ? "current" : ""}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:${isCurrent ? "var(--gold-color)" : "inherit"};">${town.name}</strong>
+              <span class="location-ring ${ringClass}">${ringLabel}</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.3;">${town.desc}</p>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              ⏳ ${distSteps} Day${distSteps > 1 ? "s" : ""} &bull; 🍞 ${provisionsCost}g Provisions
+            </div>
+            <div>
+              ${isCurrent ? `<span style="font-size:0.8rem; color:var(--gold-color); font-weight:bold;">Current City</span>` : `
+                <button class="btn btn-action" style="width:100%;" onclick="openExpeditionModal('${town.id}', ${distSteps})">
+                  Travel Route
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function openExpeditionModal(destId, days) {
+      const destTown = TOWNS.find(t => t.id === destId);
+      currentExpedition = {
+        destId: destId,
+        destTown: destTown,
+        days: days,
+        guards: 0
+      };
+      renderExpeditionModal();
+      document.getElementById("expedition-modal").style.display = "flex";
+    }
+
+    function closeExpeditionModal() {
+      currentExpedition = null;
+      document.getElementById("expedition-modal").style.display = "none";
+    }
+
+    function changeExpeditionGuards(delta) {
+      if (!currentExpedition) return;
+      const newGuards = currentExpedition.guards + delta;
+      if (newGuards >= 0 && newGuards <= 3) {
+        currentExpedition.guards = newGuards;
+        renderExpeditionModal();
+      }
+    }
+
+    function renderExpeditionModal() {
+      if (!currentExpedition) return;
+      const container = document.getElementById("expedition-modal-content");
+      const dest = currentExpedition.destTown;
+      const days = currentExpedition.days;
+      const guards = currentExpedition.guards;
+
+      const provisionsCost = days * 2;
+      const guardRatePerDay = 10;
+      const guardCost = guards * guardRatePerDay * days;
+      const totalCost = provisionsCost + guardCost;
+      const canAfford = gameState.gold >= totalCost;
+
+      let ringLabel = "Capital Hub";
+      if (dest.ring === 1) ringLabel = "Ring 1 (Safe)";
+      if (dest.ring === 2) ringLabel = "Ring 2 (Moderate)";
+      if (dest.ring === 3) ringLabel = "Ring 3 (Dangerous)";
+
+      let perkText = "";
+      if (guards === 0) {
+        perkText = `<div style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">No caravan guards hired. You must defend your wagon alone on the road.</div>`;
+      } else if (guards === 1) {
+        perkText = `<div style="background: rgba(46, 204, 113, 0.1); border-left: 3px solid #2ecc71; padding: 8px 10px; font-size: 0.82rem; color: #a9dfbf;">
+          <strong>1 Guard:</strong> +10 ATK bonus &bull; 6 passive guard damage per combat turn.
+        </div>`;
+      } else if (guards === 2) {
+        perkText = `<div style="background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db; padding: 8px 10px; font-size: 0.82rem; color: #aed6f1;">
+          <strong>2 Guards:</strong> +18 ATK bonus &bull; 12 passive guard damage &bull; 20% damage reduction.
+        </div>`;
+      } else if (guards === 3) {
+        perkText = `<div style="background: rgba(241, 196, 15, 0.1); border-left: 3px solid var(--gold-color); padding: 8px 10px; font-size: 0.82rem; color: #f9e79f;">
+          <strong>3 Guards:</strong> +25 ATK bonus &bull; 18 passive guard damage &bull; 35% damage reduction.
+        </div>`;
+      }
+
+      container.innerHTML = `
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <span style="font-size: 1.05rem; font-weight: bold; color: var(--gold-color); font-family: var(--font-serif);">${dest.name}</span>
+            <span class="location-ring ring-${dest.ring}">${ringLabel}</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); display:flex; justify-content:space-between;">
+            <span>⏳ Travel Time: <strong>${days} Day${days > 1 ? 's' : ''}</strong></span>
+            <span>🍞 Provisions: <strong>${provisionsCost}g</strong> (2g/day)</span>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <div>
+              <strong style="font-size: 0.9rem;">Hire Caravan Guards</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Rate: 10g per guard per travel day</div>
+            </div>
+            <div style="display:flex; align-items:center; gap: 8px;">
+              <button type="button" class="qty-btn" style="width:28px; height:28px; font-size:1.1rem;" ${guards <= 0 ? 'disabled' : ''} onclick="changeExpeditionGuards(-1)">−</button>
+              <span style="font-size: 1rem; font-weight: bold; min-width: 24px; text-align: center; color: var(--gold-color);">${guards}</span>
+              <button type="button" class="qty-btn" style="width:28px; height:28px; font-size:1.1rem;" ${guards >= 3 ? 'disabled' : ''} onclick="changeExpeditionGuards(1)">+</button>
+            </div>
+          </div>
+          <div style="margin-top: 10px;">
+            ${perkText}
+          </div>
+        </div>
+
+        <div style="background: #0f141d; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 0.85rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-muted);">Mandatory Provisions (${days}d × 2g):</span>
+            <span>${provisionsCost}g</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Guard Contracts (${guards} guard${guards !== 1 ? 's' : ''} × ${days}d × 10g):</span>
+            <span>${guardCost}g</span>
+          </div>
+          <div style="border-top: 1px dashed var(--border-color); padding-top: 6px; display:flex; justify-content:space-between; font-weight: bold; font-size: 0.95rem;">
+            <span>Total Expedition Cost:</span>
+            <span class="log-gold">${totalCost}g</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top: 4px; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Your Treasury:</span>
+            <span>🪙 ${gameState.gold.toLocaleString()}g</span>
+          </div>
+          ${!canAfford ? `<div style="color: #e74c3c; font-size: 0.8rem; margin-top: 6px; text-align: right; font-weight: 600;">⚠️ Insufficient gold for this expedition!</div>` : ''}
+        </div>
+
+        <div style="display:flex; gap: 10px; justify-content: flex-end;">
+          <button class="btn btn-action" onclick="closeExpeditionModal()">Cancel</button>
+          <button class="btn btn-primary" ${canAfford ? '' : 'disabled'} onclick="confirmEmbark()">Confirm & Embark</button>
+        </div>
+      `;
+    }
+
+    function confirmEmbark() {
+      if (!currentExpedition) return;
+      const days = currentExpedition.days;
+      const provisionsCost = days * 2;
+      const guards = currentExpedition.guards;
+      const guardCost = guards * 10 * days;
+      const totalCost = provisionsCost + guardCost;
+
+      if (gameState.gold < totalCost) return;
+
+      const destId = currentExpedition.destId;
+      const destTown = currentExpedition.destTown;
+      document.getElementById("expedition-modal").style.display = "none";
+
+      // Deduct total expedition expenses
+      gameState.gold -= totalCost;
+      gameState.hiredGuards = guards;
+
+      addLog(`Departed for ${destTown.name}. Paid ${provisionsCost}g provisions${guards > 0 ? ` and ${guardCost}g for ${guards} caravan guard contract${guards > 1 ? 's' : ''}` : ''}.`, "log-travel");
+
+      // Passive Road Travel Healing: +10 HP per day traveled
+      const healPotential = 10 * days;
+      const prevHp = gameState.hp;
+      gameState.hp = Math.min(gameState.maxHp, gameState.hp + healPotential);
+      const actualHealed = gameState.hp - prevHp;
+      if (actualHealed > 0) {
+        addLog(`Well-fed on the road: Restored +${actualHealed} HP.`, "log-travel");
+      }
+
+      gameState.day += days;
+      refreshDailyFluctuations();
+
+      if (gameState.hasTradeFactor) {
+        const passiveIncome = (Math.floor(Math.random() * 80) + 40) * days;
+        gameState.gold += passiveIncome;
+        addLog(`🤝 Your Trade Factor in Oakhaven returned ${passiveIncome}g net profit from regional trade routes.`, "log-trade");
+      }
+
+      currentExpedition = null;
+      const encounterTriggered = checkRoadEncounters(destTown.ring);
+
+      if (!encounterTriggered) {
+        finishTravelArrival(destId);
+      } else {
+        gameState.pendingArrivalTownId = destId;
+      }
+    }
+
+    function finishTravelArrival(destinationId) {
+      gameState.currentTownId = destinationId;
+      const townObj = TOWNS.find(t => t.id === destinationId);
+
+      // Guards expire safely at the end of the journey upon arrival
+      if (gameState.hiredGuards > 0) {
+        addLog(`🛡️ Your caravan guard contract${gameState.hiredGuards > 1 ? 's have' : ' has'} concluded upon safe arrival in ${townObj.name}.`, "log-travel");
+        gameState.hiredGuards = 0;
+      }
+
+      updateTopBar();
+      renderActiveTab();
+      triggerLocationArrival(destinationId);
+      checkDisguisedHeirQuest();
+      checkVictoryConditions();
+    }
+
+    /* =========================================================================
+       COMBAT & ROAD ENCOUNTERS (WITH GUARD INTEGRATION)
+       ========================================================================= */
+
+    function checkRoadEncounters(ring) {
+      let chance = 0;
+      if (ring === 1) chance = 0.15;
+      if (ring === 2) chance = 0.35;
+      if (ring === 3) chance = 0.60;
+
+      if (Math.random() < chance) {
+        initiateCombat(ring);
+        return true;
+      }
+      return false;
+    }
+
+    function initiateCombat(ring) {
+      let enemyName = "Highway Footpad";
+      let enemyHp = 30;
+      let enemyAtk = 14;
+
+      if (ring === 2) {
+        enemyName = "Brigand Mercenary";
+        enemyHp = 55;
+        enemyAtk = 24;
+      } else if (ring === 3) {
+        enemyName = "Dread Outlaw Veteran";
+        enemyHp = 85;
+        enemyAtk = 36;
+      }
+
+      gameState.activeCombat = {
+        ring: ring,
+        name: enemyName,
+        enemyHp: enemyHp,
+        enemyMaxHp: enemyHp,
+        enemyAtk: enemyAtk,
+        isDefending: false
+      };
+
+      document.getElementById("combat-enemy-name").textContent = enemyName;
+      document.getElementById("combat-enemy-tier").textContent = `Ring ${ring} Threat`;
+
+      const guardStats = getGuardCombatStats();
+      const guardBadge = document.getElementById("combat-guard-badge");
+      if (gameState.hiredGuards > 0) {
+        guardBadge.style.display = "inline-block";
+        guardBadge.style.background = "#1b4d3e";
+        guardBadge.style.color = "#72f2d9";
+        guardBadge.textContent = `🛡️ ${gameState.hiredGuards} Guard${gameState.hiredGuards > 1 ? 's' : ''} Active`;
+      } else {
+        guardBadge.style.display = "inline-block";
+        guardBadge.style.background = "#2d3748";
+        guardBadge.style.color = "#a0aec0";
+        guardBadge.textContent = "No Guards";
+      }
+
+      let gearDesc = `Weapon: ${EQUIPMENT_DATABASE.weapons[gameState.weaponTier].name} (+${getPlayerAtk()} ATK)`;
+      if (guardStats.atkBonus > 0) {
+        gearDesc += ` | Guards: +${guardStats.atkBonus} ATK`;
+      }
+      document.getElementById("combat-player-gear").textContent = gearDesc;
+      document.getElementById("combat-enemy-power").textContent = `Base Atk: ${enemyAtk}`;
+
+      const bribeCost = Math.max(15, Math.floor(gameState.gold * 0.10));
+      document.getElementById("bribe-cost-txt").textContent = `${bribeCost}g`;
+
+      updateCombatUI();
+      document.getElementById("combat-log").innerHTML = "Encounter started! Prepare your blade.";
+      document.getElementById("combat-overlay").style.display = "flex";
+
+      requestGeminiBanditDialogue(enemyName, ring);
+
+      if (Math.random() < 0.15) {
+        setTimeout(() => {
+          addCombatLog(`⚠️ AMBUSH! The ${enemyName} strikes from the shadows before you can react!`);
+          banditTurnStrike(true);
+        }, 600);
+      }
+    }
+
+    function updateCombatUI() {
+      const c = gameState.activeCombat;
+      if (!c) return;
+
+      document.getElementById("combat-player-hp-txt").textContent = `${gameState.hp}/${gameState.maxHp}`;
+      document.getElementById("combat-player-hp-bar").style.width = `${Math.max(0, Math.min(100, (gameState.hp / gameState.maxHp) * 100))}%`;
+
+      document.getElementById("combat-enemy-hp-txt").textContent = `${c.enemyHp}/${c.enemyMaxHp}`;
+      document.getElementById("combat-enemy-hp-bar").style.width = `${Math.max(0, Math.min(100, (c.enemyHp / c.enemyMaxHp) * 100))}%`;
+
+      updateTopBar();
+    }
+
+    function addCombatLog(msg) {
+      const log = document.getElementById("combat-log");
+      log.innerHTML += `<div>${msg}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function combatAction(action) {
+      const c = gameState.activeCombat;
+      if (!c || gameState.hp <= 0) return;
+
+      c.isDefending = false;
+      const guardStats = getGuardCombatStats();
+
+      if (action === "attack") {
+        const totalAtk = getPlayerAtk() + guardStats.atkBonus;
+        const roll = 0.85 + (Math.random() * 0.3);
+        const dmg = Math.max(5, Math.round(totalAtk * roll));
+        c.enemyHp -= dmg;
+        addCombatLog(`You slash with your ${EQUIPMENT_DATABASE.weapons[gameState.weaponTier].name} for ${dmg} damage!`);
+
+        // Active guard turn attack
+        if (guardStats.passiveDmg > 0) {
+          c.enemyHp -= guardStats.passiveDmg;
+          addCombatLog(`🛡️ Caravan guards struck for ${guardStats.passiveDmg} damage!`);
+        }
+
+        updateCombatUI();
+
+        if (c.enemyHp <= 0) {
+          combatVictory();
+          return;
+        }
+        setTimeout(() => banditTurnStrike(false), 400);
+
+      } else if (action === "defend") {
+        c.isDefending = true;
+        gameState.hp = Math.min(gameState.maxHp, gameState.hp + 5);
+        addCombatLog("You raise your guard, restoring 5 HP and bracing for incoming blows!");
+
+        // Active guard turn attack even during player defense
+        if (guardStats.passiveDmg > 0) {
+          c.enemyHp -= guardStats.passiveDmg;
+          addCombatLog(`🛡️ Caravan guards struck for ${guardStats.passiveDmg} damage!`);
+        }
+
+        updateCombatUI();
+
+        if (c.enemyHp <= 0) {
+          combatVictory();
+          return;
+        }
+        setTimeout(() => banditTurnStrike(false), 400);
+
+      } else if (action === "flee") {
+        if (Math.random() < 0.70) {
+          addCombatLog("You broke away and escaped down a side trail!");
+          if (Math.random() < 0.25) {
+            const ownedItems = Object.keys(gameState.inventory).filter(k => gameState.inventory[k] && gameState.inventory[k].qty > 0);
+            if (ownedItems.length > 0) {
+              const lostId = ownedItems[Math.floor(Math.random() * ownedItems.length)];
+              const cartItem = gameState.inventory[lostId];
+              const unitCost = cartItem.qty > 0 ? (cartItem.totalCost / cartItem.qty) : 0;
+              cartItem.qty--;
+              cartItem.totalCost = Math.max(0, cartItem.totalCost - unitCost);
+              if (cartItem.qty === 0) cartItem.totalCost = 0;
+
+              const itemObj = ITEMS.find(i => i.id === lostId);
+              addLog(`In your frantic escape, a crate of ${itemObj.name} fell from the cart!`, "log-combat");
+            }
+          }
+          setTimeout(() => {
+            closeCombat();
+            if (gameState.pendingArrivalTownId) {
+              finishTravelArrival(gameState.pendingArrivalTownId);
+            }
+          }, 600);
+        } else {
+          addCombatLog("Escape failed! The bandits block your retreat!");
+          setTimeout(() => banditTurnStrike(false), 400);
+        }
+
+      } else if (action === "bribe") {
+        const bribeCost = Math.max(15, Math.floor(gameState.gold * 0.10));
+        if (gameState.gold < bribeCost) {
+          addCombatLog("You do not have enough gold to bribe the brigands!");
+          return;
+        }
+
+        gameState.gold -= bribeCost;
+        updateTopBar();
+
+        if (Math.random() < 0.75) {
+          addCombatLog(`The bandit sneers, pocketing your ${bribeCost} gold and lets you pass.`);
+          setTimeout(() => {
+            closeCombat();
+            if (gameState.pendingArrivalTownId) {
+              finishTravelArrival(gameState.pendingArrivalTownId);
+            }
+          }, 600);
+        } else {
+          addCombatLog(`The bandit chuckles, pockets your ${bribeCost} gold, and attacks anyway!`);
+          setTimeout(() => banditTurnStrike(false), 400);
+        }
+      }
+    }
+
+    function banditTurnStrike(isAmbush) {
+      const c = gameState.activeCombat;
+      if (!c || gameState.hp <= 0) return;
+
+      const guardStats = getGuardCombatStats();
+      let enemyDamage = c.enemyAtk - getPlayerDef();
+
+      if (c.isDefending) {
+        enemyDamage = Math.floor(enemyDamage * 0.5);
+      }
+
+      // Guard damage mitigation
+      if (guardStats.dmgReduction > 0) {
+        enemyDamage = Math.floor(enemyDamage * (1 - guardStats.dmgReduction));
+      }
+
+      enemyDamage = Math.max(2, enemyDamage);
+
+      gameState.hp -= enemyDamage;
+      const reductionNote = guardStats.dmgReduction > 0 ? ` (Guards absorbed ${Math.round(guardStats.dmgReduction * 100)}%)` : '';
+      addCombatLog(`${c.name} attacks you for ${enemyDamage} damage!${reductionNote}`);
+      updateCombatUI();
+
+      if (gameState.hp <= 0) {
+        playerDefeated();
+      }
+    }
+
+    function combatVictory() {
+      const c = gameState.activeCombat;
+      const lootGold = Math.floor(Math.random() * 25 + 15) * c.ring;
+      gameState.gold += lootGold;
+      addLog(`Defeated the ${c.name}! Plundered <span class="log-gold">${lootGold}g</span> from their camp.`, "log-combat");
+
+      setTimeout(() => {
+        closeCombat();
+        if (gameState.pendingArrivalTownId) {
+          finishTravelArrival(gameState.pendingArrivalTownId);
+        }
+      }, 700);
+    }
+
+    function playerDefeated() {
+      addCombatLog("You have been struck down!");
+      setTimeout(() => {
+        closeCombat();
+        gameState.hiredGuards = 0;
+
+        if (gameState.mode === "Hardcore") {
+          alert("HARDCORE PERMADEATH: You have fallen in combat on the road. Your tale ends here.");
+          resetGameToBeginning();
+        } else {
+          gameState.hp = gameState.maxHp;
+          gameState.currentTownId = gameState.lastTavernTownId;
+          const lostGold = Math.floor(gameState.gold * 0.5);
+          gameState.gold = Math.max(10, gameState.gold - lostGold);
+
+          for (const k in gameState.inventory) {
+            gameState.inventory[k] = { qty: 0, totalCost: 0 };
+          }
+
+          addLog(`Defeated! You awoke bruised at the ${gameState.lastTavernTownId} tavern. You lost all cart cargo, guard contracts, and ${lostGold}g.`, "log-combat");
+          updateTopBar();
+          renderActiveTab();
+          triggerLocationArrival(gameState.currentTownId);
+        }
+      }, 1000);
+    }
+
+    function closeCombat() {
+      gameState.activeCombat = null;
+      document.getElementById("combat-overlay").style.display = "none";
+    }
+
+    /* =========================================================================
+       SECRET QUEST: THE DISGUISED HEIR
+       ========================================================================= */
+
+    function checkDisguisedHeirQuest() {
+      if (gameState.heirQuestStage === 0 && Math.random() < 0.25) {
+        gameState.heirQuestStage = 1;
+        promptHeirEncounter1();
+      } else if (gameState.heirQuestStage === 1 && Math.random() < 0.30) {
+        promptHeirEncounter2();
+      } else if (gameState.heirQuestStage === 2 && Math.random() < 0.35) {
+        promptHeirEncounter3();
+      }
+    }
+
+    function promptHeirEncounter1() {
+      addLog(`👑 <strong>Road Encounter:</strong> A cloaked traveler with royal bearing requests shelter in your wagon from patrolling inquisitors. You guide them safely to the nearest crossroad.`, "log-quest");
+    }
+
+    function promptHeirEncounter2() {
+      if (gameState.gold >= 800) {
+        gameState.gold -= 800;
+        gameState.heirQuestStage = 2;
+        addLog(`👑 <strong>The Disguised Heir:</strong> The mysterious traveler reappears! "I am Prince Lysander, rightful heir in hiding. I need 800g to rally my royal guards." You fund his cause with 800 gold!`, "log-quest");
+        updateTopBar();
+      }
+    }
+
+    function promptHeirEncounter3() {
+      gameState.heirQuestStage = 3;
+      addLog(`👑 <strong>The Heir's Triumph:</strong> Prince Lysander has reclaimed the Crown of Oakhaven! In gratitude, he awards you a Royal Charter!`, "log-quest");
+      triggerVictory("Secret Heir Victory", "By funding and sheltering the true heir to the realm during his darkest hours, King Lysander bestows upon you the legendary Royal Charter, appointing you as the High Chancellor of Realm Commerce!");
+    }
+
+    /* =========================================================================
+       VICTORY CONDITIONS
+       ========================================================================= */
+
+    function buyCastleVictory() {
+      if (gameState.gold < 25000) return;
+      gameState.gold -= 25000;
+      updateTopBar();
+      triggerVictory("Wealth Victory: Royal Castle Deed", "Through sheer mercantile acumen, shrewd buying, and boundless courage across the roads, you have accumulated 25,000 gold and purchased the majestic Sea-Cliff Castle of Oakhaven!");
+    }
+
+    function checkVictoryConditions() {
+      const maxWep = gameState.weaponTier === EQUIPMENT_DATABASE.weapons.length - 1;
+      const maxArm = gameState.armorTier === EQUIPMENT_DATABASE.armors.length - 1;
+      const maxCart = gameState.cartTier === EQUIPMENT_DATABASE.carts.length - 1;
+      const maxWh = gameState.warehouseTier === EQUIPMENT_DATABASE.warehouses.length - 1;
+
+      if (maxWep && maxArm && maxCart && maxWh && gameState.hasTradeFactor) {
+        triggerVictory("Merchant Tycoon Victory", "You have achieved absolute economic dominance over the entire realm! With the ultimate arsenal, royal vaults, a master caravan, and your trusted Trade Factor, no cartel can rival your commercial empire!");
+      }
+    }
+
+    function triggerVictory(title, desc) {
+      document.getElementById("victory-title").textContent = title;
+      document.getElementById("victory-desc").textContent = desc;
+
+      const statsBox = document.getElementById("victory-stats");
+      statsBox.innerHTML = `
+        <strong>Final Ledger:</strong><br>
+        &bull; Merchant: ${gameState.name} (${gameState.mode} Mode)<br>
+        &bull; Days Elapsed: ${gameState.day}<br>
+        &bull; Gold in Treasury: ${gameState.gold.toLocaleString()}g<br>
+        &bull; Warehouse Capacity: ${EQUIPMENT_DATABASE.warehouses[gameState.warehouseTier].slots} slots<br>
+        &bull; Cart Caravan: ${EQUIPMENT_DATABASE.carts[gameState.cartTier].name}
+      `;
+
+      document.getElementById("victory-modal").style.display = "flex";
+    }
+
+    /* =========================================================================
+       GEMINI API INTEGRATION & NARRATIVE GENERATOR
+       ========================================================================= */
+
+    const FALLBACK_LORE = {
+      oakhaven: "The white towers of Oakhaven reflect the morning sun as merchants from across the four realms shout their wares in the Grand Plaza.",
+      riverbend: "Gentle river ripples lap against wooden wharves, where sacks of golden grain are unloaded beneath the watch of peaceful watermills.",
+      millstone: "Endless golden stalks sway softly across the breeze as distant sheep herds graze under the placid summer sky.",
+      pinecrest: "A crisp aroma of cedar and fermenting apples lingers in the cool mountain breeze blowing through the logging cabins.",
+      sunhollow: "Terraced vineyards line the gentle red hills, where casks of vintage grapes sit stacked beneath woven straw awnings.",
+      ironforge_bluff: "Deep rhythmic clanging of heavy anvils echoes against sheer granite cliffs, accompanied by plumes of sooty forge smoke.",
+      dunmere: "Pale marsh lanterns flicker across the salt flats, illuminating workers scraping white crystals into hand-woven reed baskets.",
+      bramblewood: "Thick briar canopies shade quaint moss-grown huts where strange incense and pungent mountain herbs cure in glass jars.",
+      redstone_keep: "Iron-clad sentries patrol the battlements of Redstone Keep, their watchful gazes tracking dust trails across the craggy trade roads.",
+      mistfall: "Salty sea mist swirls around the colorful hulls of visiting carvels carrying fragrant sacks of dried coriander and clove.",
+      shadowfen: "Murky green bogs whisper beneath twisted willow trees, where opportunistic scavengers trade reptilian leather by lantern light.",
+      frostpeak: "Howling arctic winds scour the glacial mine tunnels, where brave delvers strike glowing veins of pure, star-cold mithril.",
+      dragons_tooth: "Sulfur fumes drift from black volcanic ridges as hardened trophy hunters sharpen spearheads in the glow of simmering magma pits.",
+      sunken_reach: "Turquoise lagoons lap against coral docks, where artisan divers string iridescent pearl necklaces beside bolt upon bolt of shimmering silk.",
+      obsidian_crag: "Cracked basalt towers overlook the barren edge of civilization, where daring wanderers barter ancient dragon bone artifacts."
+    };
+
+    const FALLBACK_BANDIT_LINES = [
+      "Drop the reins and slide that cargo off, or your journey ends right here on the dirt!",
+      "Look what the wind dragged in! A cart stuffed with riches and a merchant who thinks they can fight!",
+      "Coin or blood, trader! Make your choice before my steel makes it for you!",
+      "You've wandered far from the capital's guards, merchant. Time to pay the road toll!"
+    ];
+
+    async function triggerLocationArrival(townId) {
+      const town = TOWNS.find(t => t.id === townId);
+      document.getElementById("loc-name").textContent = town.name;
+      const ringBadge = document.getElementById("loc-ring");
+      ringBadge.className = `location-ring ring-${town.ring}`;
+      ringBadge.textContent = town.ring === 0 ? "Capital Hub" : `Ring ${town.ring} (${town.ring === 1 ? "Safe" : town.ring === 2 ? "Moderate" : "Dangerous"})`;
+
+      const storyBox = document.getElementById("loc-story");
+      const apiKey = localStorage.getItem("realm_gemini_api_key");
+
+      if (!apiKey) {
+        storyBox.textContent = FALLBACK_LORE[townId] || town.desc;
+        return;
+      }
+
+      storyBox.textContent = "Consulting the realm archives...";
+
+      try {
+        const prompt = `You are the narrator of a dark fantasy trading RPG called Realm Trader. Write a rich, immersive, 2-sentence atmospheric description of a merchant arriving at ${town.name} (${town.desc}). Keep it under 45 words.`;
+        const text = await callGeminiAPI(apiKey, prompt);
+        storyBox.textContent = text || FALLBACK_LORE[townId] || town.desc;
+      } catch (err) {
+        console.warn("Gemini API call failed, using fallback:", err);
+        storyBox.textContent = FALLBACK_LORE[townId] || town.desc;
+      }
+    }
+
+    async function requestGeminiBanditDialogue(enemyName, ring) {
+      const dialogueBox = document.getElementById("combat-dialogue-box");
+      const apiKey = localStorage.getItem("realm_gemini_api_key");
+
+      if (!apiKey) {
+        const rnd = FALLBACK_BANDIT_LINES[Math.floor(Math.random() * FALLBACK_BANDIT_LINES.length)];
+        dialogueBox.textContent = `"${rnd}"`;
+        return;
+      }
+
+      try {
+        const prompt = `You are a hostile ${enemyName} in a fantasy RPG ambushing a merchant on a Ring ${ring} dangerous road. Write a single witty, threatening sentence of dialogue (under 20 words).`;
+        const text = await callGeminiAPI(apiKey, prompt);
+        dialogueBox.textContent = `"${text.replace(/"/g, "")}"`;
+      } catch (err) {
+        const rnd = FALLBACK_BANDIT_LINES[Math.floor(Math.random() * FALLBACK_BANDIT_LINES.length)];
+        dialogueBox.textContent = `"${rnd}"`;
+      }
+    }
+
+    async function callGeminiAPI(apiKey, prompt) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 80
+        }
+      };
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const output = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      return output ? output.trim() : null;
+    }
+  </script>
+</body>
+</html>
